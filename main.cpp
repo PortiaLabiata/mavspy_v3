@@ -13,6 +13,15 @@ int main(int argc, char **argv) {
 
     while (1) {
         back.listen();
+
+        auto& data = back.data();
+        if (!data.size())
+            continue;
+        const auto fields = data.back().get_fields();
+        for (const auto& field : fields) {
+            std::cout << field.first << std::endl;
+        }
+
     }
     return 0;
 }
