@@ -17,9 +17,18 @@ extern "C" {
 
 namespace capture {
 
-using mav_value_t = std::variant<int8_t, char, int16_t, int32_t, int64_t,
-    float, double, 
-    uint8_t, uint16_t, uint32_t, uint64_t>;
+using mav_value_t = std::variant<
+      int8_t, 
+      char, 
+      int16_t, 
+      int32_t, 
+      int64_t,
+      float, 
+      double, 
+      uint8_t, 
+      uint16_t, 
+      uint32_t, 
+      uint64_t>;
 using mav_field_t = std::pair<std::string, mav_value_t>;
 
 struct packet_t {
@@ -118,6 +127,7 @@ struct packet_t {
     }
 
     outcome get_out() const { return out; }
+    const std::vector<uint8_t> get_data() const { return data; }
 private:
     std::vector<uint8_t> data;
     const size_t offset;
