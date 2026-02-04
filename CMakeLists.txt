@@ -10,3 +10,6 @@ add_executable(${PROJECT_NAME}
     capture_backend_ip.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC 
     pcap)
+target_compile_options(${PROJECT_NAME} PUBLIC
+    -Wall -Wextra -Werror)
+install(PROGRAMS build/mavspyv3 DESTINATION /usr/bin)

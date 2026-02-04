@@ -7,6 +7,7 @@
 #include <variant>
 #include <utility>
 #include <string>
+#include <fstream>
 
 extern "C" {
 
@@ -48,6 +49,11 @@ struct packet_t {
 
     explicit operator mavlink_message_t() const {
         return msg;
+    }
+
+    void save(std::fstream& stream) {
+        stream.write(reinterpret_cast<const char*>(data.data()), 
+                data.size());
     }
 
     std::string get_name() const {
@@ -144,6 +150,13 @@ public:
 protected:
     bool ok = false;
     std::list<packet_t> packets;
+
+    // This stupid ass hack is necessary
+    // for access to base class' protected members
+    // from derived class
+    static std::list<packet_t>& get_packets(backend_t& inst) {
+        return inst.packets;
+    }
 };
 
 }
