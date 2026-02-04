@@ -118,6 +118,7 @@ struct packet_t {
     }
 
     outcome get_out() const { return out; }
+    std::vector<uint8_t>& get_data() { return data; }
 private:
     std::vector<uint8_t> data;
     const size_t offset;
@@ -133,9 +134,9 @@ public:
     backend_t() = default;
     virtual ~backend_t() {};
 
-    virtual void listen() = 0;
+    virtual bool listen() = 0;
 
-    const std::list<packet_t>& data() const {
+    std::list<packet_t>& data() {
         return packets;
     }
     bool is_ok() const { return ok; }

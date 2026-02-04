@@ -25,7 +25,7 @@ backend_ip_t::backend_ip_t(const char *dev) {
     pcap_set_snaplen(handle, 65535);
 	pcap_set_promisc(handle, 1);
 	pcap_set_immediate_mode(handle, 1);
-    pcap_setnonblock(handle, 1, ebuf);
+    //pcap_setnonblock(handle, 1, ebuf);
 
 	if (pcap_activate(handle) != 0) {
         return;

@@ -31,7 +31,7 @@ public:
      }
     ~backend_udp_t() = default;
 
-    void listen() override {
+    bool listen() override {
         struct pcap_pkthdr *header = NULL;
         const uint8_t *raw = NULL;
 
@@ -47,8 +47,10 @@ public:
             }
             if (packet.get_out() == packet_t::outcome::ok) {
                 packets.push_back(packet);
+                return true;
             }
         } 
+        return false;
     }
 };
 
