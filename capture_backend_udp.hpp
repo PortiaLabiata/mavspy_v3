@@ -54,6 +54,8 @@ public:
         } 
         return false;
     }
+
+    bool should_exit() override { return false; }
 };
 
 }

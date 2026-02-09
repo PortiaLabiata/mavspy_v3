@@ -8,6 +8,7 @@
 #include <utility>
 #include <string>
 #include <fstream>
+#include <iostream>
 
 extern "C" {
 
@@ -17,6 +18,13 @@ extern "C" {
 }
 
 namespace capture {
+
+enum class backend_type {
+    udp,
+    tcp,
+    serial,
+    fs,
+};
 
 using mav_value_t = std::variant<int8_t, char, int16_t, int32_t, int64_t,
     float, double, 
@@ -141,6 +149,7 @@ public:
     virtual ~backend_t() {};
 
     virtual bool listen() = 0;
+    virtual bool should_exit() = 0;
 
     std::list<packet_t>& data() {
         return packets;
@@ -150,12 +159,13 @@ public:
 protected:
     bool ok = false;
     std::list<packet_t> packets;
+    backend_type type;
 
     // This stupid ass hack is necessary
     // for access to base class' protected members
     // from derived class
-    static std::list<packet_t>& get_packets(backend_t& inst) {
-        return inst.packets;
+    static std::list<packet_t>& get_packets(backend_t *inst) {
+        return inst->packets;
     }
 };
 

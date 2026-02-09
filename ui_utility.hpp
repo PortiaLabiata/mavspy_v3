@@ -50,7 +50,7 @@ std::string print_packet_message(capture::packet_t& pkt) {
     return res;
 }
 
-std::string print_packet_fields(capture::packet_t pkt) {
+std::string print_packet_fields(capture::packet_t& pkt) {
     std::string res;
     auto fields = pkt.get_fields();
     for (auto &[name, value] : fields) {
@@ -61,6 +61,37 @@ std::string print_packet_fields(capture::packet_t pkt) {
         res += std::format("{}={},", name, 
                 std::visit(visitor, value));
     }
+    res += "\t";
+    return res;
+}
+
+std::string print_packet_signature(capture::packet_t& pkt) {
+    std::string res;
+
+    auto msg = static_cast<mavlink_message_t>(pkt);
+    for (int i = 0; i < 13; i++) {
+        res += std::format("{},", msg.signature[i]); 
+    } 
+    res += "\t";
+    return res;
+}
+
+std::string print_packet_dump(capture::packet_t& pkt,
+        size_t size) {
+    std::string res;
+    auto data = pkt.get_data();
+    for (size_t i = 0; i < data.size(); i++) {
+        res += std::format("{:02x} ", data[i]);
+        if ((i+1) % size == 0)
+            res += "\n";
+    }
+    return res;
+}
+
+std::string print_packet_crc(capture::packet_t& pkt) {
+    std::string res;
+    auto msg = static_cast<mavlink_message_t>(pkt);
+    res += std::format("{:02x}{:02x}\t", msg.ck[0], msg.ck[1]);
     return res;
 }
 

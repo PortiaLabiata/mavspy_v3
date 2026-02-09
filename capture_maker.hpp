@@ -8,25 +8,22 @@
 
 namespace capture {
 
-enum class backend_type {
-    udp,
-    tcp,
-    serial,
-    fs,
-};
-
 template <typename ...Args>
 backend_t *make_backend(backend_type type, Args... args) {
+    backend_t *back = nullptr;
     switch (type) {
         case backend_type::udp:
-            return new backend_udp_t(args...);
+            back = new backend_udp_t(args...);
+            break;
         case backend_type::fs:
-            return new backend_fs_t(args...);
+            back = new backend_fs_t(args...);
+            break;
         case backend_type::serial:
         case backend_type::tcp:
         default:
             return nullptr;
     }
+    return back;
 }
 
 }
