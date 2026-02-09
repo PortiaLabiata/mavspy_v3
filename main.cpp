@@ -13,31 +13,98 @@ struct args_t {
     std::string write_file;
     std::string read_file;
 
-    bool print_fields;
-    bool print_socks;
-    bool print_sign;
-    bool print_dump;
-    bool print_crc;
+    std::string format; 
     bool verbose;
+    bool print_dump;
 
     int timeout;
     size_t dump_step;
 };
 
-capture::backend_t *back_main = nullptr;
-capture::backend_t *back_fs = nullptr;
+struct format_entry_t {
+    char character;
+    std::string (*func)(capture::packet_t&);
+};
+
+enum class format_state_t {
+    regular,
+    special,
+    screened,
+};
+
+format_entry_t format_lookup[] = {
+    {'s', ui::print_packet_sock},
+    {'f', ui::print_packet_fields},
+    {'m', ui::print_packet_message},
+    {'S', ui::print_packet_signature},
+    {'c', ui::print_packet_crc},
+
+    {'y', ui::print_packet_sysid},
+    {'o', ui::print_packet_compid},
+    {'M', ui::print_packet_msgid},
+    {'n', ui::print_packet_name},
+    {'e', ui::print_packet_seq},
+};
+const size_t lookup_size = sizeof(format_lookup)/sizeof(format_entry_t);
+
+static std::string _push_format(char c, capture::packet_t& pkt) {
+    for (size_t i = 0; i < lookup_size; i++) {
+        const auto& entry = format_lookup[i];
+        if (c == entry.character)
+            return entry.func(pkt);
+    }
+    return "";
+}
 
 args_t args;
+static std::string _format_packet(capture::packet_t& pkt) {
+    format_state_t state = format_state_t::regular;
+    std::string res;
+
+    for (auto c : args.format) {
+        switch (state) {
+            case format_state_t::regular: {
+                if (c == '%') {
+                    state = format_state_t::special;
+                } else if (c == '\\') {
+                    state = format_state_t::screened;
+                } else {
+                    res += c;
+                }
+            }
+            break;
+            case format_state_t::special: {
+                res += _push_format(c, pkt);
+                state = format_state_t::regular;
+            }
+            break;
+            case format_state_t::screened: {
+                res += c;
+                state = format_state_t::regular;
+            }
+            break;
+        }
+    }    
+    return res;
+}
+
 int main(int argc, char **argv) {
+    capture::backend_t *back_main = nullptr;
+    capture::backend_t *back_fs = nullptr;
+
     auto parser = argh::parser(argc, argv);
 
-    args.interface = parser("interface", "lo").str();
-    args.print_fields = parser[{"print-fields", "-v"}];
-    args.print_socks = parser[{"print-socks", "-s"}];
     args.verbose = parser[{"-v", "--verbose"}];
-    args.print_sign = parser["--print-signature"];
-    args.print_dump = parser["--print-dump"];
-    args.print_crc = parser["--print-crc"];
+    args.print_dump = parser[{"-d", "--dump"}];
+
+    parser("interface", "lo") >> args.interface;
+    parser({"-f", "--format"}, "%m") >> args.format;
+    parser("dump-step", 16) >> args.dump_step;
+
+    if (args.verbose) {
+        args.format = "%s%m%f";
+    }
+
     args.timeout = -1;
 
     if (parser[{"-h", "--help"}]) {
@@ -45,9 +112,7 @@ int main(int argc, char **argv) {
         std::exit(0);
     }
 
-    parser("dump-step", 16) >> args.dump_step;
-
-    if (parser({"-f", "--from-file"}) >> args.read_file) {
+    if (parser("--from-file") >> args.read_file) {
         back_main = capture::make_backend(
                 capture::backend_type::fs,
                 args.read_file.c_str());
@@ -57,7 +122,7 @@ int main(int argc, char **argv) {
                 args.interface.c_str());
     }
 
-    if (parser({"-t", "--to-file"}) >> args.write_file) {
+    if (parser("--to-file") >> args.write_file) {
         back_fs = capture::make_backend(
                 capture::backend_type::fs,
                 args.write_file.c_str());
@@ -76,9 +141,6 @@ int main(int argc, char **argv) {
         std::exit(127);
     } 
 
-    args.print_socks |= args.verbose;
-    args.print_fields |= args.verbose;
-
     auto start_time = std::chrono::steady_clock::now();
     auto end_time = start_time + 
         std::chrono::milliseconds(args.timeout);
@@ -90,26 +152,8 @@ int main(int argc, char **argv) {
         }
         if (back_main->listen()) {
             auto& pkt = back_main->data().back();
-
-            if (args.print_socks)
-                std::cout << ui::print_packet_sock(pkt);
-
-            if (args.print_crc)
-                std::cout << ui::print_packet_crc(pkt);
-
-            std::cout << ui::print_packet_message(pkt);
-
-            if (args.print_sign)
-                std::cout << ui::print_packet_signature(pkt);
-
-            if (args.print_fields)
-                std::cout << ui::print_packet_fields(pkt);
-           
-            std::cout << std::endl;
-
-            if (args.print_dump)
-                std::cout << ui::print_packet_dump(pkt, args.dump_step)
-                          << std::endl;
+            std::cout << _format_packet(pkt)
+                      << std::endl;
         }
     }
 

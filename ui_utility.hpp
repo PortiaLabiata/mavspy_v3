@@ -38,6 +38,44 @@ std::string print_packet_sock(capture::packet_t& pkt) {
     return res;
 }
 
+std::string print_packet_sysid(capture::packet_t& pkt) {
+    std::string res;
+
+    auto msg = static_cast<mavlink_message_t>(pkt);
+    res += std::format("{}\t", msg.sysid);
+    return res;
+}
+
+std::string print_packet_compid(capture::packet_t& pkt) {
+    std::string res;
+
+    auto msg = static_cast<mavlink_message_t>(pkt);
+    res += std::format("{}\t", msg.compid);
+    return res;
+}
+
+std::string print_packet_msgid(capture::packet_t& pkt) {
+    std::string res;
+
+    auto msg = static_cast<mavlink_message_t>(pkt);
+    res += std::format("{}\t", static_cast<int>(msg.msgid));
+    return res;
+}
+
+std::string print_packet_name(capture::packet_t& pkt) {
+    std::string res;
+    res += std::format("{}\t", pkt.get_name());
+    return res;
+}
+
+std::string print_packet_seq(capture::packet_t& pkt) {
+    std::string res;
+
+    auto msg = static_cast<mavlink_message_t>(pkt);
+    res += std::format("{}\t", msg.seq);
+    return res;
+}
+
 std::string print_packet_message(capture::packet_t& pkt) {
     std::string res;
 
